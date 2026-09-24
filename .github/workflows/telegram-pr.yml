@@ -1,4 +1,3 @@
-```yaml
 name: แจ้งเตือน Pull Request ไปยัง Telegram
 
 on:
@@ -310,4 +309,3 @@ EOF
             -d chat_id="${TELEGRAM_CHAT_ID}" \
             -d parse_mode="HTML" \
             --data-urlencode text="$MESSAGE"
-```
