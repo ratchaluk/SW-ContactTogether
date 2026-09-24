@@ -171,24 +171,24 @@ jobs:
 
 
               MESSAGE=$(cat <<EOF
-$EMOJI <b>$TITLE</b>
+          $EMOJI <b>$TITLE</b>
 
-👤 <b>ผู้ขอ:</b>
-$PR_USER
+          👤 <b>ผู้ขอ:</b>
+          $PR_USER
 
-📌 <b>Pull Request:</b> #$PR_NUMBER
+          📌 <b>Pull Request:</b> #$PR_NUMBER
 
-📝 <b>หัวข้อ:</b>
-$PR_TITLE
+          📝 <b>หัวข้อ:</b>
+          $PR_TITLE
 
-🌿 <b>Branch:</b>
-$HEAD_BRANCH → $BASE_BRANCH
+          🌿 <b>Branch:</b>
+          $HEAD_BRANCH → $BASE_BRANCH
 
-$ACTION_TEXT
+          $ACTION_TEXT
 
-🔗 <a href="$PR_URL">เปิด Pull Request</a>
-EOF
-)
+          🔗 <a href="$PR_URL">เปิด Pull Request</a>
+          EOF
+          )
 
             else
 
@@ -197,28 +197,28 @@ EOF
               # ====================================================
 
               MESSAGE=$(cat <<EOF
-$EMOJI <b>$TITLE</b>
+          $EMOJI <b>$TITLE</b>
 
-👤 <b>ผู้ขอ:</b>
-$PR_USER
+          👤 <b>ผู้ขอ:</b>
+          $PR_USER
 
-💬 <b>Commit Message:</b>
-$COMMIT_MESSAGE
+          💬 <b>Commit Message:</b>
+          $COMMIT_MESSAGE
 
-📝 <b>หัวข้อ Pull Request:</b>
-$PR_TITLE
+          📝 <b>หัวข้อ Pull Request:</b>
+          $PR_TITLE
 
-🕐 <b>เวลาที่ขอ:</b>
-$REQUEST_TIME
+          🕐 <b>เวลาที่ขอ:</b>
+          $REQUEST_TIME
 
-🌿 <b>Branch:</b>
-$HEAD_BRANCH → $BASE_BRANCH
+          🌿 <b>Branch:</b>
+          $HEAD_BRANCH → $BASE_BRANCH
 
-🔢 <b>Pull Request:</b> #$PR_NUMBER
+          🔢 <b>Pull Request:</b> #$PR_NUMBER
 
-🔗 <a href="$PR_URL">เปิด Pull Request</a>
-EOF
-)
+          🔗 <a href="$PR_URL">เปิด Pull Request</a>
+          EOF
+          )
 
             fi
 
@@ -263,22 +263,22 @@ EOF
 
 
             MESSAGE=$(cat <<EOF
-$EMOJI <b>$TITLE</b>
+          $EMOJI <b>$TITLE</b>
 
-👤 <b>Reviewer:</b>
-$REVIEW_USER
+          👤 <b>Reviewer:</b>
+          $REVIEW_USER
 
-📌 <b>Pull Request:</b> #$PR_NUMBER
+          📌 <b>Pull Request:</b> #$PR_NUMBER
 
-📝 <b>หัวข้อ:</b>
-$PR_TITLE
+          📝 <b>หัวข้อ:</b>
+          $PR_TITLE
 
-🌿 <b>Branch:</b>
-$HEAD_BRANCH → $BASE_BRANCH
+          🌿 <b>Branch:</b>
+          $HEAD_BRANCH → $BASE_BRANCH
 
-🔗 <a href="$PR_URL">เปิด Pull Request</a>
-EOF
-)
+          🔗 <a href="$PR_URL">เปิด Pull Request</a>
+          EOF
+          )
 
           fi
 
