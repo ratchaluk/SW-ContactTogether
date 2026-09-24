@@ -1,0 +1,83 @@
+@ContactTogetherApi_HostAddress = http://localhost:5018
+
+GET {{ContactTogetherApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+# Login - returns { statusCode, token, tokenType, expiresAtUtc, employeeId, userName, roleId }
+# @name login
+POST {{ContactTogetherApi_HostAddress}}/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "admin",
+  "password": "P@ssw0rd!"
+}
+
+###
+
+@token = {{login.response.body.token}}
+
+# Add an employee - GenderId / RoleId / OrganizationId are ids from TblGender / TblRole /
+# TblOrganization; the password is hashed (PBKDF2) before it is stored, and CreatedBy/UpdatedBy
+# come from the token's sub claim.
+POST {{ContactTogetherApi_HostAddress}}/UserManagement/employees
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userName": "adm_test",
+  "password": "1234",
+  "genderId": "C833A9E6D354B2AC350A50CFB41852A8",
+  "salutationTh": "นาย",
+  "firstnameTh": "ลาภิศ",
+  "lastnameTh": "จิรปัณณการ",
+  "firstnameEn": "Lapis",
+  "lastnameEn": "Jirapannakarn",
+  "contactDetail": "020000000",
+  "position": "admin",
+  "roleId": "1CE9D7882842E515C9292D42A3CC8E2F",
+  "organizationId": "00E071487E1343B987C548DEDAE71387",
+  "defaultLanguage": "T",
+  "defaultRowPerPage": 100,
+  "isEnable": "T"
+}
+
+###
+
+# List of values - enabled channels as { id, nameTh }
+GET {{ContactTogetherApi_HostAddress}}/ListOfValues/channels
+Authorization: Bearer {{token}}
+
+###
+
+# Add an account (TblAccount only - phone numbers live in TblAccountDetail)
+POST {{ContactTogetherApi_HostAddress}}/Account/accounts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "salutationTh": "นางสาว",
+  "firstnameTh": "ศิรประภา",
+  "lastnameTh": "ทดสอบ",
+  "genderId": "9CF68DA7874E672EFCA3A6F0824FE543",
+  "address": "123 ถนนแจ้งวัฒนะ กรุงเทพฯ",
+  "zipcode": "10210",
+  "isScret": "F",
+  "isEnable": "T"
+}
+
+###
+
+# Look up accounts by phone number - matches MOBILE / HOME / OFFICE / FAX details
+GET {{ContactTogetherApi_HostAddress}}/Account/by-phone?phoneNo=0908606424
+Authorization: Bearer {{token}}
+
+###
+
+# Logout - revokes the presented token for the remainder of its lifetime
+POST {{ContactTogetherApi_HostAddress}}/Auth/logout
+Authorization: Bearer {{token}}
+
+###
