@@ -1,0 +1,313 @@
+```yaml
+name: แจ้งเตือน Pull Request ไปยัง Telegram
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+      - ready_for_review
+
+  pull_request_review:
+    types:
+      - submitted
+
+jobs:
+  notify-telegram:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ============================================================
+      # ดึง Commit ล่าสุดของ Pull Request
+      # ============================================================
+      - name: ดึง Commit ล่าสุด
+        id: commit
+        if: >
+          github.event_name == 'pull_request' &&
+          github.event.action != 'closed'
+
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+
+        run: |
+
+          COMMIT_MESSAGE=$(gh api \
+            repos/${REPO}/pulls/${PR_NUMBER}/commits \
+            --jq '.[-1].commit.message' \
+            | head -n 1)
+
+          echo "message<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$COMMIT_MESSAGE" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+
+      # ============================================================
+      # เตรียมข้อความสำหรับ Telegram
+      # ============================================================
+      - name: เตรียมข้อความแจ้งเตือน
+        id: message
+
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+
+          PR_USER: ${{ github.event.pull_request.user.login }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+
+          CREATED_AT: ${{ github.event.pull_request.created_at }}
+
+          COMMIT_MESSAGE: ${{ steps.commit.outputs.message }}
+
+          REVIEW_USER: ${{ github.event.review.user.login }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+
+          MERGED_BY: ${{ github.event.pull_request.merged_by.login }}
+
+        run: |
+
+          # ========================================================
+          # แปลงเวลา GitHub UTC → เวลาไทย UTC+7
+          # ========================================================
+
+          if [ -n "$CREATED_AT" ]; then
+
+            REQUEST_TIME=$(date \
+              -d "$CREATED_AT +7 hours" \
+              '+%d/%m/%Y %H:%M:%S น.')
+
+          else
+
+            REQUEST_TIME="ไม่ระบุ"
+
+          fi
+
+
+          # ========================================================
+          # Pull Request Event
+          # ========================================================
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+
+            case "$ACTION" in
+
+              opened)
+
+                EMOJI="🔔"
+                TITLE="มี Pull Request ใหม่"
+
+                ;;
+
+              synchronize)
+
+                EMOJI="💻"
+                TITLE="มี Commit ใหม่ใน Pull Request"
+
+                ;;
+
+              reopened)
+
+                EMOJI="🔄"
+                TITLE="เปิด Pull Request อีกครั้ง"
+
+                ;;
+
+              ready_for_review)
+
+                EMOJI="👀"
+                TITLE="Pull Request พร้อมสำหรับการ Review"
+
+                ;;
+
+              closed)
+
+                if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+
+                  EMOJI="🚀"
+                  TITLE="Pull Request ถูก Merge แล้ว"
+
+                else
+
+                  EMOJI="❌"
+                  TITLE="Pull Request ถูกปิด"
+
+                fi
+
+                ;;
+
+              *)
+
+                EMOJI="ℹ️"
+                TITLE="มีการเปลี่ยนแปลง Pull Request"
+
+                ;;
+
+            esac
+
+
+            # ======================================================
+            # กรณี Close / Merge
+            # ======================================================
+
+            if [ "$ACTION" = "closed" ]; then
+
+              if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+
+                ACTION_TEXT="🚀 <b>Merge โดย:</b> $MERGED_BY"
+
+              else
+
+                ACTION_TEXT="❌ <b>ปิดโดย:</b> $PR_USER"
+
+              fi
+
+
+              MESSAGE=$(cat <<EOF
+$EMOJI <b>$TITLE</b>
+
+👤 <b>ผู้ขอ:</b>
+$PR_USER
+
+📌 <b>Pull Request:</b> #$PR_NUMBER
+
+📝 <b>หัวข้อ:</b>
+$PR_TITLE
+
+🌿 <b>Branch:</b>
+$HEAD_BRANCH → $BASE_BRANCH
+
+$ACTION_TEXT
+
+🔗 <a href="$PR_URL">เปิด Pull Request</a>
+EOF
+)
+
+            else
+
+              # ====================================================
+              # กรณีเปิด PR / Commit ใหม่ / Reopen / Ready for Review
+              # ====================================================
+
+              MESSAGE=$(cat <<EOF
+$EMOJI <b>$TITLE</b>
+
+👤 <b>ผู้ขอ:</b>
+$PR_USER
+
+💬 <b>Commit Message:</b>
+$COMMIT_MESSAGE
+
+📝 <b>หัวข้อ Pull Request:</b>
+$PR_TITLE
+
+🕐 <b>เวลาที่ขอ:</b>
+$REQUEST_TIME
+
+🌿 <b>Branch:</b>
+$HEAD_BRANCH → $BASE_BRANCH
+
+🔢 <b>Pull Request:</b> #$PR_NUMBER
+
+🔗 <a href="$PR_URL">เปิด Pull Request</a>
+EOF
+)
+
+            fi
+
+
+          # ========================================================
+          # Pull Request Review Event
+          # ========================================================
+
+          elif [ "$EVENT_NAME" = "pull_request_review" ]; then
+
+            case "$REVIEW_STATE" in
+
+              approved)
+
+                EMOJI="✅"
+                TITLE="Pull Request ได้รับการ Approve"
+
+                ;;
+
+              changes_requested)
+
+                EMOJI="⚠️"
+                TITLE="มีการขอแก้ไข Pull Request"
+
+                ;;
+
+              commented)
+
+                EMOJI="💬"
+                TITLE="มีการ Review Pull Request"
+
+                ;;
+
+              *)
+
+                EMOJI="👀"
+                TITLE="มีการ Review Pull Request"
+
+                ;;
+
+            esac
+
+
+            MESSAGE=$(cat <<EOF
+$EMOJI <b>$TITLE</b>
+
+👤 <b>Reviewer:</b>
+$REVIEW_USER
+
+📌 <b>Pull Request:</b> #$PR_NUMBER
+
+📝 <b>หัวข้อ:</b>
+$PR_TITLE
+
+🌿 <b>Branch:</b>
+$HEAD_BRANCH → $BASE_BRANCH
+
+🔗 <a href="$PR_URL">เปิด Pull Request</a>
+EOF
+)
+
+          fi
+
+
+          # ========================================================
+          # ส่งข้อความออกไปให้ Step ถัดไป
+          # ========================================================
+
+          echo "message<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$MESSAGE" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+
+      # ============================================================
+      # ส่งข้อความไป Telegram
+      # ============================================================
+      - name: ส่งข้อความไป Telegram
+
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MESSAGE: ${{ steps.message.outputs.message }}
+
+        run: |
+
+          curl -s -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d parse_mode="HTML" \
+            --data-urlencode text="$MESSAGE"
+```
