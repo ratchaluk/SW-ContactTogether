@@ -1,6 +1,7 @@
 using ContactTogetherApi.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ContactTogetherApi.Controllers;
 
@@ -17,4 +18,328 @@ public class ReportController : ControllerBase
         _db = db;
         _logger = logger;
     }
+
+    // [HttpPost]
+    // public async Task<IActionResult> GetReport(ServiceRequestReportRequest request)
+    // {
+    //     // ===========================
+    //     // DateTime Filter
+    //     // ===========================
+
+    //     TimeSpan startTime = string.IsNullOrWhiteSpace(request.P_Time_Start)
+    //         ? TimeSpan.Zero
+    //         : TimeSpan.Parse(request.P_Time_Start);
+
+    //     TimeSpan finishTime = string.IsNullOrWhiteSpace(request.P_Time_Finish)
+    //         ? new TimeSpan(23, 59, 59)
+    //         : TimeSpan.Parse(request.P_Time_Finish);
+
+    //     DateTime startDateTime = request.P_Start.Date.Add(startTime);
+    //     DateTime finishDateTime = request.P_Finish.Date.Add(finishTime);
+
+    //     // ===========================
+    //     // SR Code Filter (ค.ศ. -> พ.ศ.)
+    //     // ===========================
+
+    //     string startCode =
+    //         $"{(request.P_Start.Year + 543).ToString().Substring(2,2)}" +
+    //         $"{request.P_Start:MMdd}" +
+    //         "00000";
+
+    //     string finishCode =
+    //         $"{(request.P_Finish.Year + 543).ToString().Substring(2,2)}" +
+    //         $"{request.P_Finish:MMdd}" +
+    //         "99999";
+
+    //     var result =
+    //         await (
+    //             from sr in _db.TblServices
+
+    //             join st in _db.TblStatuses
+    //                 on sr.StatusId equals st.Id
+
+    //             where st.RefId != "1B751556C1458196BA0EB37037415A25"
+
+    //             join ac in _db.TblActivities
+    //                 on sr.Id equals ac.ServiceId into acJoin
+    //             from ac in acJoin.DefaultIfEmpty()
+
+    //             join c1 in _db.TblContacts
+    //                 on ac.ContactId equals c1.Id into cJoin
+    //             from c1 in cJoin.DefaultIfEmpty()
+
+    //             join ch in _db.TblChannels
+    //                 on sr.ChannelIncomingId equals ch.Id into chJoin
+    //             from ch in chJoin.DefaultIfEmpty()
+
+    //             join cat in _db.TblCategories
+    //                 on sr.CategoryId equals cat.Id into catJoin
+    //             from cat in catJoin.DefaultIfEmpty()
+
+    //             join rf in _db.TblReferences
+    //                 on sr.ServiceReference equals rf.Id into refJoin
+    //             from rf in refJoin.DefaultIfEmpty()
+
+    //             join org in _db.TblOrganizations
+    //                 on sr.OrganizationId equals org.Id into orgJoin
+    //             from org in orgJoin.DefaultIfEmpty()
+
+    //             join org2 in _db.TblOrganizations
+    //                 on org.RefId equals org2.Id into org2Join
+    //             from org2 in org2Join.DefaultIfEmpty()
+
+    //             join acc in _db.TblAccounts
+    //                 on sr.AccountId equals acc.Id into accJoin
+    //             from acc in accJoin.DefaultIfEmpty()
+
+    //             join gen in _db.TblGenders
+    //                 on acc.GenderId equals gen.Id into genJoin
+    //             from gen in genJoin.DefaultIfEmpty()
+
+    //             join emp1 in _db.TblEmployees
+    //                 on sr.CreatedBy equals emp1.Id into emp1Join
+    //             from emp1 in emp1Join.DefaultIfEmpty()
+
+    //             join emp2 in _db.TblEmployees
+    //                 on sr.OwnerId equals emp2.Id into emp2Join
+    //             from emp2 in emp2Join.DefaultIfEmpty()
+
+    //             join emp3 in _db.TblEmployees
+    //                 on sr.UpdatedBy equals emp3.Id into emp3Join
+    //             from emp3 in emp3Join.DefaultIfEmpty()
+
+    //             where sr.IsEnable == "T"
+
+    //             where string.Compare(sr.Code, startCode) >= 0 &&
+    //                   string.Compare(sr.Code, finishCode) <= 0
+
+    //             where sr.Created >= startDateTime &&
+    //                   sr.Created <= finishDateTime
+
+
+    //             select new ServiceRequestReportDto
+    //             {
+    //                 Code = sr.Code,
+    //                 Summary = sr.Summary,
+    //                 Detail = sr.Detail,
+    //                 SrReferenceLink = sr.ServiceReferenceLink,
+    //                 SrOpened = sr.DateOpened,
+    //                 SrClosed = sr.DateClosed,
+    //                 SrRequireCallBack = sr.CallBack,
+    //                 Created = sr.Created,
+
+    //                 ANumber = c1.ContactDetail,
+
+    //                 ChannelName = ch.NameTh,
+    //                 SrTypeName = cat.NameTh,
+    //                 SrReference = rf.NameTh,
+    //                 SrStatusName = st.NameTh,
+
+    //                 CreatedUName = emp1.UserName,
+    //                 CreaterName = (emp1.SalutationTh ?? "") +
+    //                               (emp1.FirstnameTh ?? "") + " " +
+    //                               (emp1.LastnameTh ?? ""),
+
+    //                 SkillAgentCreated =
+    //                     emp1.Position != null &&
+    //                     EF.Functions.Like(emp1.Position, "%Claim%")
+    //                         ? 1
+    //                         : 2,
+
+    //                 OwnerUName = emp2.UserName,
+    //                 OwnerName = (emp2.SalutationTh ?? "") +
+    //                             (emp2.FirstnameTh ?? "") + " " +
+    //                             (emp2.LastnameTh ?? ""),
+
+    //                 LastUpdatedUName = emp3.UserName,
+    //                 UpdateName = (emp3.SalutationTh ?? "") +
+    //                              (emp3.FirstnameTh ?? "") + " " +
+    //                              (emp3.LastnameTh ?? ""),
+
+    //                 SubOrgId = sr.OrganizationId,
+    //                 SubOrgName = org.NameTh,
+
+    //                 MainOrgId = org2.Id,
+    //                 MainOrgName = org2.NameTh,
+
+    //                 ContactName = (acc.SalutationTh ?? "") +
+    //                               (acc.FirstnameTh ?? "") + " " +
+    //                               (acc.LastnameTh ?? ""),
+
+    //                 Gender = gen.NameTh,
+
+    //                 Remark = sr.Remark
+    //             })
+    //             .Distinct()
+    //             .OrderBy(x => x.Code)
+    //             .ToListAsync();
+
+    //     return Ok(result);
+    // }
+
+    [HttpPost("GetReport")]
+    public async Task<IActionResult> GetReport([FromBody] ServiceRequestReportRequest request)
+    {
+        // -------------------------
+        // วันที่ + เวลา
+        // -------------------------
+        var startTime = string.IsNullOrWhiteSpace(request.P_Time_Start)
+            ? TimeSpan.Zero
+            : TimeSpan.Parse(request.P_Time_Start);
+
+        var finishTime = string.IsNullOrWhiteSpace(request.P_Time_Finish)
+            ? new TimeSpan(23, 59, 59)
+            : TimeSpan.Parse(request.P_Time_Finish);
+
+        var startDateTime = request.P_Start.Date.Add(startTime);
+        var finishDateTime = request.P_Finish.Date.Add(finishTime);
+
+        // -------------------------
+        // แปลงปี ค.ศ. -> พ.ศ. สำหรับ SR Code
+        // -------------------------
+        string startCode =
+            $"{request.P_Start.Year + 543}"[2..] +
+            request.P_Start.ToString("MMdd") +
+            "00000";
+
+        string finishCode =
+            $"{request.P_Finish.Year + 543}"[2..] +
+            request.P_Finish.ToString("MMdd") +
+            "99999";
+
+        var result = await (
+            from sr in _db.TblServices.AsNoTracking()
+
+            join st in _db.TblStatuses.AsNoTracking()
+                on sr.StatusId equals st.Id
+
+            where st.RefId != "1B751556C1458196BA0EB37037415A25"
+
+            // Activity
+            join ac in _db.TblActivities.AsNoTracking()
+                on sr.Id equals ac.ServiceId into acGroup
+            from ac in acGroup.DefaultIfEmpty()
+
+            // Contact
+            join c1 in _db.TblContacts.AsNoTracking()
+                on ac.ContactId equals c1.Id into cGroup
+            from c1 in cGroup.DefaultIfEmpty()
+
+            // Channel
+            join ch in _db.TblChannels.AsNoTracking()
+                on sr.ChannelIncomingId equals ch.Id into chGroup
+            from ch in chGroup.DefaultIfEmpty()
+
+            // Category
+            join cat in _db.TblCategories.AsNoTracking()
+                on sr.CategoryId equals cat.Id into catGroup
+            from cat in catGroup.DefaultIfEmpty()
+
+            // Reference
+            join rf in _db.TblReferences.AsNoTracking()
+                on sr.ServiceReference equals rf.Id into refGroup
+            from rf in refGroup.DefaultIfEmpty()
+
+            // Organization
+            join org in _db.TblOrganizations.AsNoTracking()
+                on sr.OrganizationId equals org.Id into orgGroup
+            from org in orgGroup.DefaultIfEmpty()
+
+            join org2 in _db.TblOrganizations.AsNoTracking()
+                on org.RefId equals org2.Id into org2Group
+            from org2 in org2Group.DefaultIfEmpty()
+
+            // Account
+            join acc in _db.TblAccounts.AsNoTracking()
+                on sr.AccountId equals acc.Id into accGroup
+            from acc in accGroup.DefaultIfEmpty()
+
+            // Gender
+            join gen in _db.TblGenders.AsNoTracking()
+                on acc.GenderId equals gen.Id into genGroup
+            from gen in genGroup.DefaultIfEmpty()
+
+            // Employee (Created)
+            join emp1 in _db.TblEmployees.AsNoTracking()
+                on sr.CreatedBy equals emp1.Id into emp1Group
+            from emp1 in emp1Group.DefaultIfEmpty()
+
+            // Employee (Owner)
+            join emp2 in _db.TblEmployees.AsNoTracking()
+                on sr.OwnerId equals emp2.Id into emp2Group
+            from emp2 in emp2Group.DefaultIfEmpty()
+
+            // Employee (Updated)
+            join emp3 in _db.TblEmployees.AsNoTracking()
+                on sr.UpdatedBy equals emp3.Id into emp3Group
+            from emp3 in emp3Group.DefaultIfEmpty()
+
+            where sr.IsEnable == "T"
+               && string.Compare(sr.Code, startCode) >= 0
+               && string.Compare(sr.Code, finishCode) <= 0
+               && sr.Created >= startDateTime
+               && sr.Created <= finishDateTime
+              
+
+            orderby sr.Code
+
+            select new ServiceRequestReportDto
+            {
+                Code = sr.Code,
+                Summary = sr.Summary,
+                Detail = sr.Detail,
+                SrReferenceLink = sr.ServiceReferenceLink,
+                SrOpened = sr.DateOpened,
+                SrClosed = sr.DateClosed,
+                SrRequireCallBack = sr.CallBack,
+                Created = sr.Created,
+
+                ANumber = c1 != null ? c1.ContactDetail : "",
+
+                ChannelName = ch != null ? ch.NameTh : "",
+                SrTypeName = cat != null ? cat.NameTh : "",
+                SrReference = rf != null ? rf.NameTh : "",
+                SrStatusName = st.NameTh,
+
+                CreatedUName = emp1 != null ? emp1.UserName : "",
+                CreaterName = emp1 == null
+                    ? ""
+                    : $"{emp1.SalutationTh}{emp1.FirstnameTh} {emp1.LastnameTh}",
+
+                SkillAgentCreated =
+                    emp1 != null && EF.Functions.Like(emp1.Position ?? "", "%Claim%")
+                        ? 1
+                        : 2,
+
+                OwnerUName = emp2 != null ? emp2.UserName : "",
+                OwnerName = emp2 == null
+                    ? ""
+                    : $"{emp2.SalutationTh}{emp2.FirstnameTh} {emp2.LastnameTh}",
+
+                LastUpdatedUName = emp3 != null ? emp3.UserName : "",
+                UpdateName = emp3 == null
+                    ? ""
+                    : $"{emp3.SalutationTh}{emp3.FirstnameTh} {emp3.LastnameTh}",
+
+                SubOrgId = sr.OrganizationId,
+                SubOrgName = org != null ? org.NameTh : "",
+
+                MainOrgId = org2 != null ? org2.Id : null,
+                MainOrgName = org2 != null ? org2.NameTh : "",
+
+                ContactName = acc == null
+                    ? ""
+                    : $"{acc.SalutationTh}{acc.FirstnameTh} {acc.LastnameTh}",
+
+                Gender = gen != null ? gen.NameTh : "",
+
+                Remark = sr.Remark
+            })
+            .Distinct()
+            .ToListAsync();
+
+        return Ok(result);
+    }
+
 }
+
